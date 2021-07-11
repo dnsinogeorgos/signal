@@ -3,7 +3,8 @@ A ~~small~~ tiny package for signal handling.
 
 Each invocation iterates over the list of provided signals to act upon.  
 Signals are iterated in the order provided and only the first signal that matches is
-handled.
+handled.  
+Calls to each handler will be ignored until previous invocations are finished.
 
 ### Usage:
 Install with:
@@ -24,7 +25,7 @@ import (
 )
 
 func main() {
-	signals := []signal.Signal{
+	signals := []*signal.Signal{
 		{
 			Signal:  syscall.SIGHUP,
 			Msg:     "received SIGHUP... reloading configuration",
@@ -51,5 +52,4 @@ func HandleStop() {
 	// Graceful shutdown code here
 	log.Printf("shut down complete")
 }
-
 ```

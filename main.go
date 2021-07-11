@@ -28,6 +28,7 @@ func Handle(ss []*Signal) {
 }
 
 // listen iterates over the list of provided signals to act upon on each invocation.
+// Only one running instance is allowed of each handler.
 func listen(c chan os.Signal, ss []*Signal) {
 	for _, s := range ss {
 		s.sem = make(chan struct{}, 1)
@@ -39,7 +40,7 @@ func listen(c chan os.Signal, ss []*Signal) {
 		for _, s := range ss {
 			if rs == s.Signal {
 				if len(s.sem) != 0 {
-					log.Printf("ignoring %s, a handler is in progress", s.Signal.String())
+					log.Printf("ignoring signal '%s', a handler is already in progress", s.Signal.String())
 					break
 				}
 
