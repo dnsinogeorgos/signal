@@ -37,12 +37,15 @@ func Handle(ss []*Signal) {
 						log.Printf("ignoring %s, handler is in progress", s.Signal)
 						break
 					}
+					log.Printf("swapping inprogress to true")
 					s.inProgress = true
 					go handleSignal(s)
 					s.mu.Unlock()
 					break
 				}
+				log.Printf("exiting inner loop")
 			}
+			log.Printf("exiting outer loop")
 		}
 	}()
 }
