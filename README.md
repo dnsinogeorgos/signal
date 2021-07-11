@@ -1,18 +1,29 @@
 # signal
-A small package for signal handling.
+A ~~small~~ tiny package for signal handling.
 
-Each signal iterates over the list of provided signals to act upon.  
+Each invocation iterates over the list of provided signals to act upon.  
 Signals are iterated in the order provided and only the first signal that matches is
 handled.
 
 ### Usage:
-install with:
+Install with:
 ```shell
 go get github.com/dnsinogeorgos/signal
 ```
 
-example:
+Sample code:
 ```go
+package main
+
+import (
+	"log"
+	"syscall"
+	"time"
+
+	"github.com/dnsinogeorgos/signal"
+)
+
+func main() {
 	signals := []signal.Signal{
 		{
 			Signal:  syscall.SIGHUP,
@@ -27,4 +38,18 @@ example:
 		},
 	}
 	signal.Handle(signals)
+
+	time.Sleep(1 * time.Hour)
+}
+
+func HandleReload() {
+	// Configuration reload code here
+	log.Printf("configuration reloaded")
+}
+
+func HandleStop() {
+	// Graceful shutdown code here
+	log.Printf("shut down complete")
+}
+
 ```
