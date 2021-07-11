@@ -4,50 +4,51 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 )
 
 // Signal communicates the signal handling behaviour to the Handle function.
 type Signal struct {
-	mu         sync.Mutex
-	Signal     syscall.Signal
-	Msg        string
-	Exit       bool
-	Code       int
-	Handler    func()
-	inProgress bool
+	Signal  syscall.Signal
+	Msg     string
+	Exit    bool
+	Code    int
+	Handler func()
+	sem     chan struct{}
 }
 
 // Handle sets up the wiring and starts a goroutine to listen in the background. It
 // receives a slice of signals to handle. Signals are iterated in the order provided and
 // only the first signal that matches is handled.
 func Handle(ss []*Signal) {
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c)
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh)
 
-		for {
-			rs := <-c
+	go listen(signalCh, ss)
+}
 
-			for _, s := range ss {
-				if rs == s.Signal {
-					s.mu.Lock()
-					if s.inProgress {
-						log.Printf("ignoring %s, handler is in progress", s.Signal)
-						break
-					}
-					log.Printf("swapping inprogress to true")
-					s.inProgress = true
-					go handleSignal(s)
-					s.mu.Unlock()
+// listen iterates over the list of provided signals to act upon on each invocation.
+func listen(c chan os.Signal, ss []*Signal) {
+	for _, s := range ss {
+		s.sem = make(chan struct{}, 1)
+	}
+
+	for {
+		rs := <-c
+
+		for _, s := range ss {
+			if rs == s.Signal {
+				if len(s.sem) != 0 {
+					log.Printf("ignoring %s, a handler is in progress", s.Signal.String())
 					break
 				}
-				log.Printf("exiting inner loop")
+
+				s.sem <- struct{}{}
+				go handleSignal(s)
+				break
 			}
-			log.Printf("exiting outer loop")
 		}
-	}()
+	}
 }
 
 // handleSignal executes the behaviour described in the Signal value.
@@ -56,10 +57,8 @@ func handleSignal(s *Signal) {
 	if s.Handler != nil {
 		s.Handler()
 	}
-
 	if s.Exit {
 		os.Exit(s.Code)
 	}
-
-	s.inProgress = false
+	<-s.sem
 }
