@@ -54,7 +54,9 @@ func listen(c chan os.Signal, ss []*Signal) {
 
 // handleSignal executes the behaviour described in the Signal value.
 func handleSignal(s *Signal) {
-	log.Printf(s.Msg)
+	if s.Msg != "" {
+		log.Printf(s.Msg)
+	}
 	if s.Handler != nil {
 		s.Handler()
 	}
